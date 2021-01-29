@@ -1,16 +1,63 @@
 const router = require('express').Router();
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
-const {jwtSecret} = require('../../config/secret')
+const User = require('./user-model')
+const {isValid, uniqueUser} = require('../middleware/users-middleware')
+const {jwtSecret} = require('../../config/secret');
 
 
-router.post('/register', (req, res) => {
-  res.end('implement register, please!');
+router.post('/register', uniqueUser, (req, res) => {
+  const credentials = req.body
+
+  if(isValid(credentials)) {
+    const hash = bcrypt.hashSync(credentials.password, 10)
+    credentials.password = hash
+
+    User.add(credentials)
+      .then(user => {
+        res.status(201).json(user)
+      })
+      .catch(err => {
+        res.status(500).json({message: err.message})
+      })
+  } else {
+    res.status(400).json({message:'username and password required'})
+  }
 });
 
 router.post('/login', (req, res) => {
-  res.end('implement login, please!');
+  const {username, password} = req.body
+
+  if(isValid(req.body)) {
+    User.findBy({ username })
+      .then(([user]) => {
+        if (user && bcrypt.compareSync(password, user.password)) {
+          const token = genToken(user)
+          res.status(200).json({message: 'access granted', token})
+        } else {
+          res.status(401).json({message: 'invalid credentials'})
+        }
+      })
+      .catch(err => {
+        res.status(500).json({message: err.message})
+      })
+  } else {
+    res.status(400).json({message: 'username and password required'})
+  }
 });
+
+
+function genToken(user) {
+  const payload = {
+    subject: user.id,
+    username: user.username,
+    department: user.department
+  }
+  const options = {
+    expiresIn: '1h'
+  }
+  return jwt.sign(payload, jwtSecret, options)
+}
 
 module.exports = router;
 
