@@ -6,10 +6,10 @@ function isValid(user) {
     return Boolean(user.username && user.password && typeof user.password === 'string')
 }
 
-async function uniqueUser(req, res, next) {
-    const user = await User.findBy({username: req.body.username})
+function uniqueUser(req, res, next) {
+    const user = User.findBy(req.body.username)
 
-    !user.length ? next() :  res.status(401).json('username taken')
+    return user.length ? res.status(401).json({message: 'username taken'}) : next()   
 }
 
 
