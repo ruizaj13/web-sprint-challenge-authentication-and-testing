@@ -2,11 +2,11 @@ const router = require('express').Router();
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const User = require('./user-model')
-const {isValid, uniqueUser} = require('../middleware/users-middleware')
+const {isValid} = require('../middleware/users-middleware')
 const {jwtSecret} = require('../../config/secret');
 
 
-router.post('/register', uniqueUser, (req, res) => {
+router.post('/register',  (req, res) => {
   const credentials = req.body
 
   if(isValid(credentials)) {
@@ -18,7 +18,7 @@ router.post('/register', uniqueUser, (req, res) => {
         res.status(201).json(user)
       })
       .catch(err => {
-        res.status(500).json({message: err.message})
+        res.status(500).json({message: 'username taken'})
       })
   } else {
     res.status(400).json({message:'username and password required'})
